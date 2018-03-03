@@ -1,0 +1,80 @@
+{{ define "content" }}
+
+	{{/* partial "widgets/breadcrumb.html" . */}}
+	<main class="candidate">
+		<h1>
+            {{ if isset .Params "image"}}
+                <div class="avatar avatar-lg">
+                    <img class="img-avatar" src="{{.Params.image}}" />
+                </div>
+            {{ end }}
+            Research: {{ .Params.title}}
+
+            <a class="btn-sm" href="{{.Site.Params.ghrepo}}edit/master/content/{{.File.Path}}" target="_blank">
+                <i class="fa fa-edit"></i> Edit (in GitHub)
+            </a>
+        </h1>
+
+        <!-- candidate table -->
+
+        <table class="table table-striped">
+            <tr>
+                <td>
+                    {{ if .Params.linkedin }}
+                    <a href="{{.Params.linkedin}}" target="_blank">linkedin</a>
+                    {{ end }}
+                </td>
+            </tr>
+            <tr>
+                <th>title:  		    </th>
+                <td>{{.Params.title}} 	</td>
+                <th>company:  	        </th>
+                <td>{{.Params.company}} </td>
+            </tr>
+
+            <tr>
+                <th>current_role </th>
+                <td>{{.Params.current_role}} 		</td>
+            </tr>
+            <tr>
+                <th>locations  	            </th>
+                <td>{{.Params.locations}}   </td>
+                <th>jobs  		            </th>
+                <td>{{.Params.jobs}}  		</td>
+            </tr>
+            <tr>
+                <th>keywords                </th>
+                <td>{{.Params.keywords}} 	</td>
+                <th>email  		            </th>
+                <td>{{.Params.email}}       </td>
+            </tr>
+            <tr>
+                <th>status:  	            </th>
+                <td><a href="/tables/{{.Params.status}}"> {{.Params.status}} </a></td>
+            </tr>
+
+        </table>
+
+        <hr/>
+        <h3>Activity</h3>
+        {{ $text := .Params.activity }}
+        {{ if eq (printf "%T" $text) "map[interface {}]interface {}" }}
+        <td>
+            <table class="table table-responsive-sm table-striped">
+                {{ range $key, $value := $text }}
+                <tr>
+                    <th>{{ $key }}</th>
+                    <td> {{$value}} </td>
+                </tr>
+                {{ end }}
+            </table>
+        </td>
+        {{ else }}
+        <td>{{ $text }}</td>
+        {{ end }}
+
+        {{ .Content }}
+	</main>
+    <hr/>
+    <a href="/tables/research-candidates/">Back to table with all Research Candidates</a>
+{{ end }}

@@ -1,0 +1,37 @@
+{{ define "content" }}
+
+<h3>{{.Params.title}}
+    <a class="btn-sm" href="{{.Site.Params.ghrepo}}edit/master/content/{{.File.Path}}" target="_blank">
+        <i class="fa fa-edit"></i> Edit (in GitHub)
+    </a></h3>
+
+<ul>
+    {{.Params.description}}
+</ul>
+
+<h3>Notes</h3>
+<ul>
+    <table class="table table-responsive-sm table-striped">
+        {{ range $value := .Params.notes }}
+        <tr>
+            <td> {{$value}} </td>
+        </tr>
+        {{ end }}
+    </table>
+</ul>
+
+<h3>Email template</h3>
+
+<ul>
+    <div class="card">
+        <div class="card-header">
+            {{.Params.subject}}
+        </div>
+        <div class="card-body">
+            {{ .Content}}
+        </div>
+    </div>
+</ul>
+
+<a href=".." >back to all email templates</a>
+{{ end }}

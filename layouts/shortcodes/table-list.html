@@ -1,36 +1,54 @@
 
-{{  $type   := .Get "type"                                             }}
-{{  $when   := (add ".Params." (.Get "when"))                          }}
-{{  $is     := .Get "is"                                               }}
-{{  $fields := split (.Get "fields") ","                               }}  {{/* $fields := split (default (.Get "fields") "title") ","   */}}  {{/* bug: default value not working (idea is to default to title when no value is provided) */}}
+{{  $type   := cond (ne (.Get "type") "") (.Get "type") "candidate"         }}
+{{  $when   := cond (ne (.Get "when") "") (add ".Params." (.Get "when")) "" }}
+{{ .Scratch.Set "is" (.Get "is")}}
+{{ if eq (.Scratch.Get "is") "false" }}
+{{      .Scratch.Set "is" nil }}
+{{ else }}
+{{      .Scratch.Set "is" (.Get "is") }}
+{{ end }}
+{{/* By default, table-list will only retrieve pages which are note archived */}}
+{{ .Scratch.Set "default_collection" (where (where .Site.Pages "Kind" "page") ".Params.archive" nil) }}
+{{/* If .Get "when" is equalt to archive we let when/is logic take care of filtering */}}
+{{ if eq (.Get "when") "archive" }}
+    {{ .Scratch.Set "default_collection" (where .Site.Pages "Kind" "page") }}
+{{ end }}
+{{ $is := .Scratch.Get "is" }}
+{{  $fields := split (.Get "fields") ","                                    }}  {{/* $fields := split (default (.Get "fields") "title") ","   */}}  {{/* bug: default value not working (idea is to default to title when no value is provided) */}}
 
-{{  if ne $type ""                                                     }}
-{{      .Scratch.Set "pages" (where .Site.Pages "Type" $type)          }}
-{{  else                                                               }}
-{{      .Scratch.Set "pages" .Site.Pages                               }}
-{{  end                                                                }}
+{{  if ne $type ""                                                          }}
+{{      .Scratch.Set "pages" (where (.Scratch.Get "default_collection") "Type" $type) }}
+{{  else                                                                    }}
+{{      .Scratch.Set "pages" (.Scratch.Get "default_collection") }}
+{{  end                                                                     }}
 
-{{  if ne $is ""                                                       }}
-{{      .Scratch.Set "rows" (where (.Scratch.Get "pages") $when $is)   }}
-{{  else                                                               }}
-{{      .Scratch.Set "rows" (.Scratch.Get "pages")                     }}
-{{  end                                                                }}
+{{  if ne $when ""                                                          }}
+{{      if ne $is ""                                                        }}
+{{          .Scratch.Set "rows" (where (.Scratch.Get "pages") $when $is)    }}
+{{      else                                                                }}
+{{          .Scratch.Set "rows" (where (.Scratch.Get "pages") $when true)   }}
+{{      end                                                                 }}
+{{  else                                                                    }}
+{{      .Scratch.Set "rows" (.Scratch.Get "pages")                          }}
+{{  end                                                                     }}
 
-{{/* todo: add ability to sort by field (or at least by title) */}}
+{{/* todo: add ability to sort by field (or at least by title)            */}}
 
+<style>
+
+</style>
 <div class="card">
     <div class="card-body">
         <table class="table table-responsive-sm table-hover table-outline mb-0">
             <thead class="thead-light">
-                <th width="10">#</th>
                 {{ range $fields}}
-                    <th class="text-center">{{ . }}</th>
+                    <th>{{ . | humanize }}</th>
                 {{ end }}
+                <th width="10">#</th>
             </thead>
             <tbody>
                 {{ range $index, $row :=  .Scratch.Get "rows" }}
                     <tr>
-                        <td> {{ add $index 1}}</td>
                         {{ range $fields}}
                             {{ if isset $row.Params (lower .)               }}
                                 {{ $link := $row.Permalink                  }}
@@ -39,11 +57,45 @@
                                     <td>
                                         <a href="{{$link}}">{{ $text }}</a>
                                     </td>
+                                {{ else if eq . "linkedin" }}
+                                <td>
+                                    {{ if $text}}
+                                        <a href="{{$text}}" target="_blank">open</a>
+                                    {{ end }}
+                                </td>
+                                {{ else if eq . "image" }}
+                                    <td>
+                                        {{ with $text }}
+                                        <div class="avatar avatar-sm">
+                                            <img class="img-avatar" src="{{ . }}" />
+                                        </div>
+                                        {{ end }}
+                                    </td>
                                 {{ else }}
-                                    <td>{{ $text }}</td>
+                                    {{ if eq (printf "%T" $text) "map[interface {}]interface {}" }}
+                                        <td>
+                                            <table class="table table-responsive-sm table-striped">
+                                                {{ range $key, $value := $text }}
+                                                    <tr>
+                                                        <th>{{ $key }}</th>
+                                                        <td> {{$value}} </td>
+                                                    </tr>
+                                                {{ end }}
+                                            </table>
+                                        </td>
+                                    {{ else }}
+                                        {{ if hasPrefix $text "http"}}
+                                            <td><a href="{{ $text }}" target="_blank">open</a></td>
+                                        {{ else }}
+                                            <td>{{ $text }}</td>
+                                        {{ end }}
+                                    {{ end }}
                                 {{ end }}
+                            {{ else }}
+                                <td></td>
                             {{ end}}
                         {{ end }}
+                        <td> {{ add $index 1}}</td>
                     </tr>
                 {{ end }}
             </tbody>
